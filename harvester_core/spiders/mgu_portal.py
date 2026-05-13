@@ -1,43 +1,51 @@
 import scrapy
-from scrapy_playwright.page import PageMethod
+import zipfile
+import os
 from harvester_core.items import UniversalFileItem
 
-class UniversalSpider(scrapy.Spider):
+class MguSpider(scrapy.Spider):
     name = "universal_crawler"
-    
-    # Change these for different websites
-    allowed_domains = ["mgu.ac.in"] 
-    start_urls = ["https://www.mgu.ac.in/infodesk/downloads/"]
-
-    def start_requests(self):
-        for url in self.start_urls:
-            yield scrapy.Request(
-                url,
-                meta={
-                    "playwright": True,
-                    "playwright_page_methods": [
-                        PageMethod("wait_for_selector", "a"), # Wait for links to appear
-                    ],
-                },
-            )
+    start_urls = ["file:///home/duplin/Downloads/download_test/index.html"]
 
     def parse(self, response):
-        # 1. Harvest Files (PDFs, Docs, etc.)
-        links = response.xpath("//a[contains(@href, 'pdf') or contains(@href, 'download')]")
-        for link in links:
-            item = UniversalFileItem()
-            item['file_urls'] = [response.urljoin(link.xpath("@href").get())]
-            item['file_name'] = link.xpath("text()").get(default="document").strip()
-            item['site_domain'] = self.allowed_domains[0]
-            item['source_page_url'] = response.url
-            yield item
+        valid_exts = ['.pdf', '.zip', '.docx', '.xlsx', '.doc', '.xls','.txt', '.csv', '.pptx', '.ppt','.xml']
+        
+        for link in response.xpath("//a"):
+            href = link.xpath("@href").get()
+            if not href: continue
+            
+            abs_url = response.urljoin(href)
 
-        # 2. Recursive Navigation (Follow sub-pages)
-        # This handles the [73/74] "Click Here" scenario
-        all_pages = response.css("a::attr(href)").getall()
-        for href in all_pages:
-            full_url = response.urljoin(href)
-            # Stay within the website and avoid re-downloading files as pages
-            if any(domain in full_url for domain in self.allowed_domains):
-                if not any(ext in full_url.lower() for ext in ['.pdf', '.zip', '.jpg']):
-                    yield scrapy.Request(full_url, callback=self.parse, meta={"playwright": True})
+            if any(abs_url.lower().endswith(ext) for ext in valid_exts):
+                item = UniversalFileItem()
+                item['file_name'] = link.xpath("text()").get(default="Document").strip()
+                item['file_urls'] = [abs_url]
+                item['file_type'] = abs_url.split('.')[-1].upper()
+                yield item
+            elif abs_url.endswith('.html') or not '.' in abs_url.split('/')[-1]:
+                yield response.follow(abs_url, self.parse)
+
+    def closed(self, reason):
+        """
+        This runs automatically when the spider finishes downloading everything.
+        """
+        zip_name = "MGU_Full_Archive.zip"
+        folder_to_zip = self.settings.get('FILES_STORE')
+        csv_file = "Final_Inventory_Report.csv"
+
+        self.logger.info("📦 Creating final ZIP archive...")
+        
+        with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as z:
+            # 1. Add the CSV report to the ZIP
+            if os.path.exists(csv_file):
+                z.write(csv_file)
+            
+            # 2. Add all downloaded files (already using real names)
+            if os.path.exists(folder_to_zip):
+                for root, dirs, files in os.walk(folder_to_zip):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        # Store in ZIP under a 'files/' directory
+                        z.write(file_path, os.path.join("downloaded_files", file))
+        
+        self.logger.info(f"✅ ZIP Archive created: {zip_name}")
