@@ -1,4 +1,4 @@
-# Scrapping (MGU Portal Harvester)
+# Scrapping (Portal Harvester)
 
 A small Scrapy-based harvester for extracting inventory and notices from the MGU portal.
 
