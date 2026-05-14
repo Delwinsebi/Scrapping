@@ -5,7 +5,7 @@ from harvester_core.items import UniversalFileItem
 
 class MguSpider(scrapy.Spider):
     name = "universal_crawler"
-    start_urls = ["file:///home/duplin/Downloads/download_test/index.html"]
+    start_urls = ["https://www.mgu.ac.in/infodesk/downloads/"]
 
     def parse(self, response):
         valid_exts = ['.pdf', '.zip', '.docx', '.xlsx', '.doc', '.xls','.txt', '.csv', '.pptx', '.ppt','.xml']
