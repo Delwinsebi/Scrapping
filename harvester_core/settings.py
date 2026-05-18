@@ -21,3 +21,6 @@ FILES_STORE_ALLOW_REDIRECTS = True
 DOWNLOAD_TIMEOUT = 180 
 # Disable concurrent requests if the local file system is slow
 CONCURRENT_REQUESTS = 1
+
+
+TWISTED_REACTOR = "twisted.internet.epollreactor.EPollReactor"
