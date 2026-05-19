@@ -5,7 +5,13 @@ from harvester_core.items import UniversalFileItem
 
 class MguSpider(scrapy.Spider):
     name = "universal_crawler"
-    start_urls = ["https://www.mgu.ac.in/infodesk/downloads/"]
+    
+    def start_requests(self):
+        """Use the URL passed from FastAPI instead of hardcoded start_urls"""
+        url = getattr(self, 'url', None)
+        if not url:
+            raise ValueError("Spider requires 'url' parameter")
+        yield scrapy.Request(url, callback=self.parse)
 
     def parse(self, response):
         valid_exts = ['.pdf', '.zip', '.docx', '.xlsx', '.doc', '.xls','.txt', '.csv', '.pptx', '.ppt','.xml']
@@ -29,23 +35,21 @@ class MguSpider(scrapy.Spider):
         """
         This runs automatically when the spider finishes downloading everything.
         """
-        zip_name = "MGU_Full_Archive.zip"
+        job_id = getattr(self, 'job_id', 'default')
+        zip_name = f"MGU_Archive_{job_id}.zip"
         folder_to_zip = self.settings.get('FILES_STORE')
         csv_file = "Final_Inventory_Report.csv"
 
         self.logger.info("📦 Creating final ZIP archive...")
         
         with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as z:
-            # 1. Add the CSV report to the ZIP
             if os.path.exists(csv_file):
                 z.write(csv_file)
             
-            # 2. Add all downloaded files (already using real names)
             if os.path.exists(folder_to_zip):
                 for root, dirs, files in os.walk(folder_to_zip):
                     for file in files:
                         file_path = os.path.join(root, file)
-                        # Store in ZIP under a 'files/' directory
                         z.write(file_path, os.path.join("downloaded_files", file))
         
         self.logger.info(f"✅ ZIP Archive created: {zip_name}")
