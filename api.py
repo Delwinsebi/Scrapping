@@ -8,7 +8,6 @@ import uvicorn
 import os
 import uuid
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
 
@@ -58,8 +57,7 @@ async def trigger_crawl(target_url: str):
     
     return {
         "status": "Crawl started successfully in background",
-        "job_id": job_id,
-        "check_status_and_download": f"http://127.0.0.1:8000/download/{job_id}"
+        "job_id": job_id
     }
 
 
