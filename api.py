@@ -4,7 +4,7 @@ from crochet import setup, run_in_reactor
 # This prevents Twisted reactor conflicts.
 setup()
 
-
+import uvicorn
 import os
 import uuid
 from fastapi import FastAPI, HTTPException
@@ -63,25 +63,15 @@ async def trigger_crawl(target_url: str):
     }
 
 
-@app.get("/download/{job_id}")
-async def download_zip(job_id: str):
-    """
-    Checks if the background spider finished saving files and packages.
-    Serves the ZIP file as a direct browser download when ready.
-    """
-    expected_zip_path = f"MGU_Archive_{job_id}.zip"
+if __name__ == "__main__":
+    print("🚀 Starting the FastAPI-Scrapy Web Server...")
+    print("📋 API Documentation will be available at: http://127.0.0.1:8000/docs")
     
-    # If the spider is still processing links or writing the zip to disk
-    if not os.path.exists(expected_zip_path):
-        return {
-            "job_id": job_id,
-            "status": "In Progress",
-            "message": "The spider is still crawling pages or archiving assets. Please pull this endpoint again shortly."
-        }
-    
-    # Send the physical ZIP file back as a stream response to trigger browser saving
-    return FileResponse(
-        path=expected_zip_path,
-        media_type="application/zip",
-        filename=f"MGU_Full_Archive_{job_id}.zip"
+    # Configures Uvicorn engine
+    # "api:app" means: look inside file 'api.py' for variable 'app'
+    uvicorn.run(
+        "api:app", 
+        host="127.0.0.1", 
+        port=8000, 
+        reload=True  # Automatically updates server when code modifications are saved
     )
