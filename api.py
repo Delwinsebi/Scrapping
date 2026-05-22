@@ -26,13 +26,32 @@ app = FastAPI(
 # 2. Load standard settings configured in harvester_core/settings.py
 crawl_runner = CrawlerRunner(get_project_settings())
 
+job_status = {}
+
 @run_in_reactor
 def run_spider_logic(url: str, job_id: str):
     """
     Executes the Scrapy spider execution asynchronously inside a Crochet executor thread.
     This runs your existing Scrapy pipeline, downloads documents, and bundles them.
     """
-    return crawl_runner.crawl(MguSpider, url=url, job_id=job_id)
+    job_status[job_id] = {"finished": False, "status": "running"}
+
+    deferred = crawl_runner.crawl(MguSpider, url=url, job_id=job_id)
+
+    def mark_done(result):
+        job_status[job_id] = {"finished": True, "status": "completed"}
+        return result
+
+    def mark_failed(failure):
+        job_status[job_id] = {
+            "finished": True,
+            "status": "failed",
+            "error": str(failure.value)
+        }
+        return failure
+
+    deferred.addCallbacks(mark_done, mark_failed)
+    return deferred
 
 
 @app.get("/")
@@ -59,6 +78,13 @@ async def trigger_crawl(target_url: str):
         "status": "Crawl started successfully in background",
         "job_id": job_id
     }
+
+@app.get("/crawl/{job_id}")
+async def crawl_status(job_id: str):
+    status = job_status.get(job_id)
+    if not status:
+        raise HTTPException(status_code=404, detail="Unknown job_id")
+    return {"job_id": job_id, **status}
 
 
 if __name__ == "__main__":
