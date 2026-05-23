@@ -17,11 +17,7 @@ from harvester_core.spiders.mgu_portal import MguSpider
 
 
 
-app = FastAPI(
-    title="Universal Crawler API",
-    description="FastAPI wrapper for running Scrapy spiders asynchronously and downloading assets.",
-    version="1.0.0"
-)
+app = FastAPI()
 
 # 2. Load standard settings configured in harvester_core/settings.py
 crawl_runner = CrawlerRunner(get_project_settings())
@@ -92,10 +88,9 @@ if __name__ == "__main__":
     print("📋 API Documentation will be available at: http://127.0.0.1:8000/docs")
     
     # Configures Uvicorn engine
-    # "api:app" means: look inside file 'api.py' for variable 'app'
     uvicorn.run(
         "api:app", 
         host="127.0.0.1", 
         port=8000, 
-        reload=True  # Automatically updates server when code modifications are saved
+        reload=True
     )
