@@ -24,3 +24,10 @@ CONCURRENT_REQUESTS = 1
 
 
 TWISTED_REACTOR = "twisted.internet.epollreactor.EPollReactor"
+
+# Force the media engine to chase paths across redirect chains
+FILES_STORE_ALLOW_REDIRECTS = True
+
+# Overrides standard request restrictions so media downloads don't 
+# drop redirect items as generic HTML pages
+MEDIA_ALLOW_REDIRECTS = True
