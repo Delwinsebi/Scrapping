@@ -64,10 +64,3 @@ Replace `output.csv` with `output.json` or another filename/format supported by 
 
 This repository does not include a license file. Add a `LICENSE` if you intend to open-source it.
 
----
-If you'd like, I can also:
-
-- Add example run commands to a simple `scripts/` folder.
-- Create a basic `Makefile` or `tox` configuration for common tasks.
-
-Please tell me which you'd prefer next.
