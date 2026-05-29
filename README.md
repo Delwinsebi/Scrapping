@@ -62,5 +62,5 @@ Replace `output.csv` with `output.json` or another filename/format supported by 
 
 ## License
 
-This repository does not include a license file. Add a `LICENSE` if you intend to open-source it.
+This repository does not include a license file. 
 
